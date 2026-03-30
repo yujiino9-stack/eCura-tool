@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>早期胃癌 eCura 分類ツール</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      border: 0.5px solid #d3d1c7;
+      padding: 2rem 2.5rem;
+    }
+    h1 { font-size: 20px; font-weight: 500; color: #1a1a18; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 13px; color: #5f5e5a; margin-bottom: 2rem; line-height: 1.6; }
+    .section { margin-bottom: 1.4rem; }
+    .section-title {
+      font-size: 11px; font-weight: 500; color: #888780;
+      margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .radio-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border: 0.5px solid #b4b2a9; border-radius: 8px;
+      cursor: pointer; font-size: 14px; color: #1a1a18; background: #fff;
+      transition: background 0.12s, border-color 0.12s; user-select: none;
+    }
+    .radio-btn:hover { background: #f1efe8; }
+    .radio-btn input { display: none; }
+    .radio-btn.selected { background: #e6f1fb; border-color: #378add; color: #0c447c; font-weight: 500; }
+    .radio-hint { font-size: 11px; color: #888780; margin-top: 5px; line-height: 1.5; }
+    .divider { border: none; border-top: 0.5px solid #d3d1c7; margin: 1.5rem 0; }
+
+    .result-box {
+      padding: 1.25rem 1.5rem; border-radius: 12px;
+      border: 0.5px solid #d3d1c7; margin-bottom: 1rem;
+    }
+    .result-label { font-size: 11px; font-weight: 500; color: #888780; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .result-value { font-size: 30px; font-weight: 500; margin-bottom: 6px; }
+    .result-treatment { font-size: 14px; line-height: 1.6; }
+
+    .r-pending { background: #f1efe8; }
+    .r-pending .result-value { color: #888780; font-size: 15px; font-weight: 400; margin-top: 4px; }
+    .r-a  { background: #eaf3de; border-color: #97c459; }
+    .r-a  .result-value, .r-a  .result-treatment { color: #3b6d11; }
+    .r-b  { background: #e6f1fb; border-color: #85b7eb; }
+    .r-b  .result-value, .r-b  .result-treatment { color: #185fa5; }
+    .r-c1 { background: #faeeda; border-color: #ef9f27; }
+    .r-c1 .result-value, .r-c1 .result-treatment { color: #633806; }
+    .r-c2 { background: #fcebeb; border-color: #f09595; }
+    .r-c2 .result-value, .r-c2 .result-treatment { color: #791f1f; }
+
+    .extra-section { display: none; }
+    .extra-section.visible { display: block; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .info-card { background: #f1efe8; border-radius: 10px; padding: 1rem 1.25rem; }
+    .info-card-label { font-size: 11px; color: #888780; margin-bottom: 4px; line-height: 1.4; }
+    .info-card-value { font-size: 22px; font-weight: 500; color: #1a1a18; }
+    .info-card-sub { font-size: 12px; color: #5f5e5a; margin-top: 4px; line-height: 1.5; white-space: pre-line; }
+
+    .block-title { font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 8px; }
+    .score-items { margin-bottom: 1rem; }
+    .score-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid #e8e6df; font-size: 13px; }
+    .score-item:last-child { border-bottom: none; }
+    .score-item-label { color: #5f5e5a; }
+    .score-item-val { font-weight: 500; color: #1a1a18; }
+    .score-item-val.plus { color: #854f0b; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 1rem; }
+    th { background: #f1efe8; font-weight: 500; color: #5f5e5a; padding: 6px 10px; text-align: left; border-bottom: 0.5px solid #d3d1c7; }
+    td { padding: 6px 10px; border-bottom: 0.5px solid #e8e6df; color: #1a1a18; }
+    tr.highlight td { background: #faeeda; font-weight: 500; }
+
+    .policy-text { font-size: 14px; line-height: 1.8; white-space: pre-line; }
+    .note { font-size: 12px; color: #888780; line-height: 1.7; margin-top: 1rem; }
+
+    @media (max-width: 480px) {
+      .container { padding: 1.5rem 1.25rem; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>早期胃癌 eCura 分類ツール</h1>
+  <p class="subtitle">ESD/EMR 後の病理結果を入力して根治度・リンパ節転移リスク・推奨方針を判定します<br>（日本胃癌学会ガイドライン第6版 図7・表2・表3）</p>
+
+  <div class="section">
+    <div class="section-title">組織型（優位）</div>
+    <div class="radio-group" id="g-histology">
+      <label class="radio-btn" onclick="sel(this,'histology','diff')"><input type="radio" name="histology">分化型優位</label>
+      <label class="radio-btn" onclick="sel(this,'histology','undiff')"><input type="radio" name="histology">未分化型優位</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">深達度</div>
+    <div class="radio-group" id="g-depth">
+      <label class="radio-btn" onclick="sel(this,'depth','m-ul0')"><input type="radio" name="depth">M層（UL0）</label>
+      <label class="radio-btn" onclick="sel(this,'depth','m-ul1')"><input type="radio" name="depth">M層（UL1）</label>
+      <label class="radio-btn" onclick="sel(this,'depth','sm1')"><input type="radio" name="depth">SM浸潤 &lt; 500 µm（SM1）</label>
+      <label class="radio-btn" onclick="sel(this,'depth','sm2')"><input type="radio" name="depth">SM浸潤 ≥ 500 µm（SM2以深）</label>
+    </div>
+    <p class="radio-hint">※ SM1／SM2 は粘膜筋板下縁からの浸潤距離（胃癌：500 µm が境界）</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">腫瘍径</div>
+    <div class="radio-group" id="g-size">
+      <label class="radio-btn" onclick="sel(this,'size','le2')"><input type="radio" name="size">≤ 2 cm</label>
+      <label class="radio-btn" onclick="sel(this,'size','le3')"><input type="radio" name="size">2 cm 超〜3 cm 以下</label>
+      <label class="radio-btn" onclick="sel(this,'size','gt3')"><input type="radio" name="size">&gt; 3 cm</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">水平断端（HM）</div>
+    <div class="radio-group" id="g-hm">
+      <label class="radio-btn" onclick="sel(this,'hm','hm0')"><input type="radio" name="hm">HM0（陰性）</label>
+      <label class="radio-btn" onclick="sel(this,'hm','hm1')"><input type="radio" name="hm">HM1（陽性）</label>
+      <label class="radio-btn" onclick="sel(this,'hm','hmx')"><input type="radio" name="hm">HMX（判定不能）</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">垂直断端（VM）</div>
+    <div class="radio-group" id="g-vm">
+      <label class="radio-btn" onclick="sel(this,'vm','vm0')"><input type="radio" name="vm">VM0（陰性）</label>
+      <label class="radio-btn" onclick="sel(this,'vm','vm1')"><input type="radio" name="vm">VM1（陽性）</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">リンパ管侵襲（Ly）</div>
+    <div class="radio-group" id="g-ly">
+      <label class="radio-btn" onclick="sel(this,'ly','ly0')"><input type="radio" name="ly">Ly0（陰性）</label>
+      <label class="radio-btn" onclick="sel(this,'ly','ly1')"><input type="radio" name="ly">Ly1（陽性）</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">静脈侵襲（V）</div>
+    <div class="radio-group" id="g-v">
+      <label class="radio-btn" onclick="sel(this,'v','v0')"><input type="radio" name="v">V0（陰性）</label>
+      <label class="radio-btn" onclick="sel(this,'v','v1')"><input type="radio" name="v">V1（陽性）</label>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- eCura判定 -->
+  <div class="result-box r-pending" id="result-box">
+    <div class="result-label">根治度判定</div>
+    <div class="result-value" id="result-value">すべての項目を入力してください</div>
+    <div class="result-treatment" id="result-treatment"></div>
+  </div>
+
+  <!-- リスク情報（判定後に表示） -->
+  <div class="extra-section" id="extra-section">
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">表2：リンパ節転移率（外科切除例）</div>
+        <div class="info-card-value" id="lnm-rate">—</div>
+        <div class="info-card-sub" id="lnm-rate-sub"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">表3：LNMスコア（ESD後追加切除例）</div>
+        <div class="info-card-value" id="lnm-score">—</div>
+        <div class="info-card-sub" id="lnm-score-sub"></div>
+      </div>
+    </div>
+
+    <div class="block-title">スコア内訳（表3）</div>
+    <div class="score-items" id="score-breakdown"></div>
+
+    <div class="block-title">スコア別リンパ節転移率（表3）</div>
+    <table>
+      <thead><tr><th>合計点</th><th>患者数</th><th>LNM数</th><th>転移率</th></tr></thead>
+      <tbody id="score-tbody"></tbody>
+    </table>
+
+    <div class="result-box" id="policy-box">
+      <div class="result-label">推奨される今後の方針</div>
+      <div class="policy-text" id="policy-text"></div>
+    </div>
+
+  </div>
+
+  <p class="note">
+    ※ 本ツールは日本胃癌学会ガイドライン（第6版）図7・表2・表3に基づく参考情報です。<br>
+    実際の治療方針は担当医と十分にご相談ください。
+  </p>
+</div>
+
+<script>
+const state = {};
+
+const scoreTableData = [
+  { pts: 0, n: 62,  lnm: 1,  rate: 1.6 },
+  { pts: 1, n: 341, lnm: 9,  rate: 2.6 },
+  { pts: 2, n: 185, lnm: 9,  rate: 4.9 },
+  { pts: 3, n: 148, lnm: 11, rate: 7.4 },
+  { pts: 4, n: 132, lnm: 11, rate: 8.3 },
+  { pts: 5, n: 141, lnm: 28, rate: 19.9 },
+  { pts: 6, n: 77,  lnm: 21, rate: 27.3 },
+  { pts: 7, n: 15,  lnm: 4,  rate: 26.7 },
+];
+
+function getLnmRate2(histology, depth, size) {
+  if (depth === 'm-ul0') {
+    if (histology === 'diff')
+      return size === 'le2' ? { rate: '0%', ci: '95%CI: 0〜0.7%' } : { rate: '0%', ci: '95%CI: 0〜0.6%' };
+    else
+      return size === 'le2' ? { rate: '0%', ci: '95%CI: 0〜0.96%' } : { rate: '2.8%', ci: '95%CI: 1.0〜6.0%' };
+  } else if (depth === 'm-ul1') {
+    if (histology === 'diff')
+      return (size === 'le2' || size === 'le3') ? { rate: '0%', ci: '95%CI: 0〜0.6%' } : { rate: '3.0%', ci: '95%CI: 1.2〜6.2%' };
+    else
+      return size === 'le2' ? { rate: '2.9%', ci: '95%CI: 1.2〜5.7%' } : { rate: '5.9%', ci: '95%CI: 4.3〜7.9%' };
+  } else if (depth === 'sm1') {
+    if (histology === 'diff')
+      return (size === 'le2' || size === 'le3') ? { rate: '0%', ci: '95%CI: 0〜2.6%' } : { rate: '2.6%', ci: '95%CI: 0.3〜9.0%' };
+    else
+      return { rate: '10.6%', ci: '95%CI: 5.0〜19.2%' };
+  }
+  return { rate: '—', ci: '（参考値なし）' };
+}
+
+function calcScore3(size, vm, v, depth) {
+  let score = 0;
+  const items = [];
+  const add = (label, pts, cond) => {
+    if (cond) { score += pts; items.push({ label, val: '+' + pts }); }
+    else items.push({ label, val: '0' });
+  };
+  add('腫瘍径 > 3 cm', 1, size === 'gt3');
+  add('深部断端陽性（VM1）', 1, vm === 'vm1');
+  add('静脈侵襲（V1）', 3, v === 'v1');
+  add('SM2以深', 3, depth === 'sm2');
+  return { score, items };
+}
+
+function sel(el, key, val) {
+  document.querySelectorAll('#g-' + key + ' .radio-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state[key] = val;
+  classify();
+}
+
+function classify() {
+  const needed = ['histology', 'depth', 'size', 'hm', 'vm', 'ly', 'v'];
+  if (needed.some(k => !state[k])) return;
+
+  const { histology, depth, size, hm, vm, ly, v } = state;
+  const box = document.getElementById('result-box');
+  const valEl = document.getElementById('result-value');
+  const txEl = document.getElementById('result-treatment');
+
+  let ecura = '';
+
+  if (ly === 'ly1' || v === 'v1' || vm === 'vm1') {
+    setResult(box, valEl, txEl, 'r-c2', 'eCuraC-2', '追加外科切除が原則（脈管侵襲または断端陽性）');
+    ecura = 'c2';
+  } else if (depth === 'sm2') {
+    setResult(box, valEl, txEl, 'r-c2', 'eCuraC-2', '追加外科切除が原則（SM ≥ 500 µm）');
+    ecura = 'c2';
+  } else if (histology === 'diff') {
+    const sizeOk3 = size === 'le2' || size === 'le3';
+    if (depth === 'm-ul0' || (depth === 'm-ul1' && sizeOk3) || (depth === 'sm1' && sizeOk3)) {
+      if (hm === 'hm0') { setResult(box, valEl, txEl, 'r-a', 'eCuraA', '経過観察（内視鏡的根治切除）'); ecura = 'a'; }
+      else { setResult(box, valEl, txEl, 'r-c1', 'eCuraC-1', '再ESD・追加外科切除・慎重な経過観察・焼灼法 のいずれかを検討'); ecura = 'c1'; }
+    } else {
+      setResult(box, valEl, txEl, 'r-c2', 'eCuraC-2', '追加外科切除が原則'); ecura = 'c2';
+    }
+  } else {
+    if (depth === 'm-ul0' && size === 'le2' && hm === 'hm0') {
+      setResult(box, valEl, txEl, 'r-b', 'eCuraB', '経過観察（拡大適応切除）'); ecura = 'b';
+    } else {
+      setResult(box, valEl, txEl, 'r-c2', 'eCuraC-2', '追加外科切除が原則'); ecura = 'c2';
+    }
+  }
+
+  document.getElementById('extra-section').classList.add('visible');
+  renderRisk(ecura, histology, depth, size, vm, v);
+}
+
+function renderRisk(ecura, histology, depth, size, vm, v) {
+  const r2 = getLnmRate2(histology, depth, size);
+  document.getElementById('lnm-rate').textContent = r2.rate;
+  document.getElementById('lnm-rate-sub').textContent = r2.ci;
+
+  const s3 = calcScore3(size, vm, v, depth);
+  const row = scoreTableData.find(d => d.pts === s3.score) || scoreTableData[scoreTableData.length - 1];
+  document.getElementById('lnm-score').textContent = s3.score + ' 点';
+  document.getElementById('lnm-score-sub').textContent = 'LNM率 ' + row.rate + '%（n=' + row.n + '）';
+
+  // スコア内訳
+  document.getElementById('score-breakdown').innerHTML =
+    s3.items.map(it =>
+      '<div class="score-item"><span class="score-item-label">' + it.label + '</span>' +
+      '<span class="score-item-val' + (it.val !== '0' ? ' plus' : '') + '">' + it.val + '</span></div>'
+    ).join('') +
+    '<div class="score-item" style="border-top:0.5px solid #d3d1c7;margin-top:4px;padding-top:8px;">' +
+    '<span class="score-item-label" style="font-weight:500;color:#1a1a18;">合計</span>' +
+    '<span class="score-item-val plus">' + s3.score + ' 点</span></div>';
+
+  // スコア表
+  document.getElementById('score-tbody').innerHTML = scoreTableData.map(d =>
+    '<tr' + (d.pts === s3.score ? ' class="highlight"' : '') + '>' +
+    '<td>' + d.pts + (d.pts === s3.score ? ' ◀ 該当' : '') + '</td>' +
+    '<td>' + d.n + '</td><td>' + d.lnm + '</td><td>' + d.rate + '%</td></tr>'
+  ).join('');
+
+  // 推奨方針
+  const pb = document.getElementById('policy-box');
+  const pt = document.getElementById('policy-text');
+  pb.className = 'result-box r-' + ecura;
+
+  const policies = {
+    a:  '✔ 内視鏡的根治切除（eCuraA）\n定期的な内視鏡フォローアップを推奨します。\nリンパ節転移リスクは極めて低く（' + r2.rate + '）、追加外科手術は不要です。',
+    b:  '✔ 拡大適応切除（eCuraB）\n定期的な内視鏡フォローアップを推奨します。\n未分化型のため再発リスクに引き続き注意が必要です。',
+    c1: '⚠ eCuraC-1（HM陽性または判定不能）\n以下のいずれかを検討してください：\n・再ESD（技術的に可能な場合）\n・追加外科切除\n・慎重な経過観察（高齢・合併症がある場合）\n・焼灼法（アルゴンプラズマなど）',
+    c2: '⚠ eCuraC-2（根治切除不成立）\n原則として追加外科切除（胃切除＋リンパ節郭清）を推奨します。\n\nLNMスコア：' + s3.score + '点　→　LNM率 約' + row.rate + '%\n' +
+        (s3.score >= 5
+          ? '高リスク群です。手術適応を積極的に検討してください。'
+          : '年齢・合併症を考慮しながら方針を決定してください。'),
+  };
+  pt.textContent = policies[ecura];
+}
+
+function setResult(box, valEl, txEl, cls, label, treatment) {
+  box.className = 'result-box ' + cls;
+  valEl.textContent = label;
+  txEl.textContent = treatment;
+}
+</script>
+</body>
+</html>
