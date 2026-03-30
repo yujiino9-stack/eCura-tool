@@ -238,7 +238,7 @@ function getLnmRate2(histology, depth, size) {
   return { rate: '—', ci: '（参考値なし）' };
 }
 
-function calcScore3(size, vm, v, depth) {
+function calcScore3(size, vm, ly, v, depth) {
   let score = 0;
   const items = [];
   const add = (label, pts, cond) => {
@@ -247,7 +247,8 @@ function calcScore3(size, vm, v, depth) {
   };
   add('腫瘍径 > 3 cm', 1, size === 'gt3');
   add('深部断端陽性（VM1）', 1, vm === 'vm1');
-  add('静脈侵襲（V1）', 3, v === 'v1');
+  add('静脈侵襲（V1）', 1, v === 'v1');
+  add('リンパ管侵襲（Ly1）', 3, ly === 'ly1');
   add('SM2以深', 3, depth === 'sm2');
   return { score, items };
 }
@@ -293,15 +294,15 @@ function classify() {
   }
 
   document.getElementById('extra-section').classList.add('visible');
-  renderRisk(ecura, histology, depth, size, vm, v);
+  renderRisk(ecura, histology, depth, size, vm, ly, v);
 }
 
-function renderRisk(ecura, histology, depth, size, vm, v) {
+function renderRisk(ecura, histology, depth, size, vm, ly, v) {
   const r2 = getLnmRate2(histology, depth, size);
   document.getElementById('lnm-rate').textContent = r2.rate;
   document.getElementById('lnm-rate-sub').textContent = r2.ci;
 
-  const s3 = calcScore3(size, vm, v, depth);
+  const s3 = calcScore3(size, vm, ly, v, depth);
   const row = scoreTableData.find(d => d.pts === s3.score) || scoreTableData[scoreTableData.length - 1];
   document.getElementById('lnm-score').textContent = s3.score + ' 点';
   document.getElementById('lnm-score-sub').textContent = 'LNM率 ' + row.rate + '%（n=' + row.n + '）';
